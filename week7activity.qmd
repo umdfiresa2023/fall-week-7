@@ -1,0 +1,124 @@
+---
+title: "Week 7 Activity"
+author: "2023 FIRE298: Sustainability Analytics"
+format: html
+editor: visual
+---
+
+### Install required packages
+
+```{r}
+install.packages("terra")
+install.packages("tidyverse")
+install.packages("remotes")
+install.packages("readxl")
+```
+
+### Declare that you will use the packages
+
+```{r}
+library("terra")
+library("tidyverse")
+library("remotes")
+library("readxl")
+```
+
+### Upload an excel file into the Environment
+
+Upload an excel file from Google Drive into the Environment.
+
+Note: Skip this method if you are using Posit Cloud.
+
+```{r}
+
+```
+
+Posit Cloud method to upload an excel file into the Environment.
+
+Note: This method will only work if the excel file exists in the GitHub repository.
+
+```{r}
+Africa_1997_2023_Sep22<-read_excel("Africa_1997-2023_Sep22.xlsx")
+```
+
+### **Upload a shapefile into the Environment**
+
+Upload a shapefile from either:
+
+```         
+"G:/Shared drives/2023 FIRE-SA/FALL OUTPUT/Mining/DATA/Democratic_Republic_of_the_Congo_mining_permits/Democratic_Republic_of_the_Congo_mining_permits.shp"
+```
+
+or
+
+```         
+"Democratic_Republic_of_the_Congo_mining_permits/Democratic_Republic_of_the_Congo_mining_permits.shp"
+```
+
+into the Environment.
+
+```{r}
+p<-vect("Democratic_Republic_of_the_Congo_mining_permits/Democratic_Republic_of_the_Congo_mining_permits.shp")
+```
+
+### Map conflicts in the DRC
+
+```{r}
+acl<-Africa_1997_2023_Sep22 %>%
+  filter(COUNTRY=="Democratic Republic of Congo")
+
+names(acl)
+
+acl_points<-vect(acl, 
+               geom=c("LONGITUDE", "LATITUDE"), 
+               crs="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs ")
+
+plot(acl_points)
+```
+
+### Plot permit locations and conflicts together
+
+```{r}
+plot(acl_points, "EVENT_TYPE", 
+     col=rainbow(6), 
+     cex=0.1)
+plot(p, add=TRUE)
+```
+
+### Create 10 km buffer around the centroid of each permit
+
+```{r}
+pc<-centroids(p)
+
+crs(p)
+
+pcb<-buffer(pc, width=10000, capstyle="round")
+```
+
+### Understand shapefile dimensions
+
+```{r}
+dim(pcb)
+
+dim(acl_points)
+```
+
+### Find conflict events within permit row 7170
+
+```{r}
+i<-terra::relate(pcb[7170], acl_points, relation="intersects")
+```
+
+### **Inspect intersection output**
+
+```{r}
+dim(i)
+sum(i) #there are 40 true values
+```
+
+### Identify conflicts within permit row 7170
+
+```{r}
+vi<-as.vector(i)
+acl_in_p7170<-acl[vi,]
+```
